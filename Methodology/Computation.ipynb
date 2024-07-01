@@ -1,0 +1,92 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "720a8a4d-cdf4-46b1-9661-67605101d97d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "\n",
+    "# Load datasets (replace 'path_to_financial_ledger.csv' and 'path_to_useeio.csv' with actual paths)\n",
+    "financial_ledger_df = pd.read_csv('path_to_financial_ledger.csv')\n",
+    "useeio_df = pd.read_csv('path_to_useeio.csv')\n",
+    "\n",
+    "# Assume financial ledger already has a column 'mapped_naics_code' mapped to NAICS codes\n",
+    "# and 'amount' which is the monetary value of transactions\n",
+    "\n",
+    "# Ensure the 'mapped_naics_code' column is of the same type in both datasets\n",
+    "financial_ledger_df['mapped_naics_code'] = financial_ledger_df['mapped_naics_code'].astype(str)\n",
+    "useeio_df['naics_code'] = useeio_df['naics_code'].astype(str)\n",
+    "\n",
+    "# Display initial information about the datasets\n",
+    "print(\"Financial Ledger Dataset Info:\")\n",
+    "print(financial_ledger_df.info())\n",
+    "print(\"\\nUSEEIO Dataset Info:\")\n",
+    "print(useeio_df.info())\n",
+    "\n",
+    "# Emission Estimation\n",
+    "# Merge the financial ledger with USEEIO dataset based on 'mapped_naics_code' to get the emission factors\n",
+    "merged_df = pd.merge(financial_ledger_df, useeio_df, left_on='mapped_naics_code', right_on='naics_code', how='inner')\n",
+    "\n",
+    "# Calculate emissions for each transaction\n",
+    "# Assuming the USEEIO dataset has a column 'emission_factor' which is emissions per monetary unit\n",
+    "merged_df['emissions'] = merged_df['amount'] * merged_df['emission_factor']\n",
+    "\n",
+    "# Aggregation\n",
+    "# Aggregate emissions by 'mapped_naics_code'\n",
+    "aggregated_emissions = merged_df.groupby('mapped_naics_code')['emissions'].sum().reset_index()\n",
+    "\n",
+    "# Reporting\n",
+    "# Generate a summary report\n",
+    "summary_report = aggregated_emissions.copy()\n",
+    "summary_report.columns = ['NAICS Code', 'Total Emissions']\n",
+    "\n",
+    "# Display the summary report\n",
+    "print(\"\\nSummary Report:\")\n",
+    "print(summary_report)\n",
+    "\n",
+    "# Output\n",
+    "# Save the summary report to a CSV file\n",
+    "summary_report.to_csv('scope3_emissions_summary.csv', index=False)\n",
+    "\n",
+    "# For visualization, you can use matplotlib or seaborn\n",
+    "import matplotlib.pyplot as plt\n",
+    "import seaborn as sns\n",
+    "\n",
+    "# Plot total emissions by NAICS code\n",
+    "plt.figure(figsize=(12, 8))\n",
+    "sns.barplot(data=summary_report, x='NAICS Code', y='Total Emissions', palette='viridis')\n",
+    "plt.xticks(rotation=90)\n",
+    "plt.title('Total Scope 3 Emissions by NAICS Code')\n",
+    "plt.xlabel('NAICS Code')\n",
+    "plt.ylabel('Total Emissions')\n",
+    "plt.tight_layout()\n",
+    "plt.savefig('scope3_emissions_by_naics_code.png')\n",
+    "plt.show()\n"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
